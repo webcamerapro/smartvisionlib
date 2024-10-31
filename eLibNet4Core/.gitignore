@@ -1,0 +1,9 @@
+.idea/
+.git/
+.vs/
+lib/
+res/
+bin/
+obj/
+publish/
+packages/

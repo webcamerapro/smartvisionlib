@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+    <PropertyGroup>
+        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+        <ProjectGuid>{C2AA4E04-760F-4DBE-947B-DA72E7709893}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>eLibNet4Onvif</RootNamespace>
+        <AssemblyName>eLibNet4Onvif</AssemblyName>
+        <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+        <FileAlignment>512</FileAlignment>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>full</DebugType>
+        <Optimize>false</Optimize>
+        <OutputPath>bin\Debug\</OutputPath>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <DocumentationFile>bin\Debug\eLibNet4Onvif.xml</DocumentationFile>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <DebugType>pdbonly</DebugType>
+        <Optimize>true</Optimize>
+        <OutputPath>bin\Release\</OutputPath>
+        <DefineConstants>TRACE</DefineConstants>
+        <ErrorReport>prompt</ErrorReport>
+        <WarningLevel>4</WarningLevel>
+        <DocumentationFile>bin\Release\eLibNet4Onvif.xml</DocumentationFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="AsyncEnumerable, Version=4.0.2.0, Culture=neutral, PublicKeyToken=0426b068161bd1d1, processorArchitecture=MSIL">
+            <HintPath>..\packages\AsyncEnumerator.4.0.2\lib\net461\AsyncEnumerable.dll</HintPath>
+        </Reference>
+        <Reference Include="FSharp.Control.AsyncSeq, Version=2.0.21.0, Culture=neutral, processorArchitecture=MSIL">
+            <HintPath>..\packages\FSharp.Control.AsyncSeq.2.0.21\lib\net45\FSharp.Control.AsyncSeq.dll</HintPath>
+        </Reference>
+        <Reference Include="FSharp.Core, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+            <HintPath>..\packages\FSharp.Core.9.0.100-beta.24466.6\lib\netstandard2.0\FSharp.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="JetBrains.Annotations, Version=4242.42.42.42, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
+            <HintPath>..\packages\JetBrains.Annotations.2024.3.0\lib\net20\JetBrains.Annotations.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+            <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.1.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Extensions.DependencyInjection, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+            <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.2.2.0\lib\net461\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+            <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.2.2.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+        </Reference>
+        <Reference Include="mscorlib"/>
+        <Reference Include="System.Reactive.Core">
+            <HintPath>..\Libs\System.Reactive.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Interfaces">
+            <HintPath>..\Libs\System.Reactive.Interfaces.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Linq">
+            <HintPath>..\Libs\System.Reactive.Linq.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.discovery">
+            <HintPath>..\Libs\onvif.discovery.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.services">
+            <HintPath>..\Libs\onvif.services.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.session">
+            <HintPath>..\Libs\onvif.session.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.utils">
+            <HintPath>..\Libs\onvif.utils.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive, Version=6.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Reactive.6.0.1\lib\net472\System.Reactive.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Core, Version=3.0.6000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Reactive.Core.6.0.1\lib\net472\System.Reactive.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Interfaces, Version=3.0.6000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Reactive.Interfaces.6.0.1\lib\net472\System.Reactive.Interfaces.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Linq, Version=3.0.6000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Reactive.Linq.6.0.1\lib\net472\System.Reactive.Linq.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Threading.Channels, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+            <HintPath>..\packages\System.Threading.Channels.8.0.0\lib\net462\System.Threading.Channels.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+            <HintPath>..\..\SmartVisionDesign\VideoSurveillance\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.activities">
+            <HintPath>..\Libs\utils.activities.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.async">
+            <HintPath>..\Libs\utils.async.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.bootstrapping">
+            <HintPath>..\Libs\utils.bootstrapping.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.common">
+            <HintPath>..\Libs\utils.common.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.diagnostics">
+            <HintPath>..\Libs\utils.diagnostics.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.fsharp">
+            <HintPath>..\Libs\utils.fsharp.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.linq">
+            <HintPath>..\Libs\utils.linq.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.wpf">
+            <HintPath>..\Libs\utils.wpf.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.xml">
+            <HintPath>..\Libs\utils.xml.dll</HintPath>
+        </Reference>
+        <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+            <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+        </Reference>
+        <Reference Include="System"/>
+        <Reference Include="System.Core"/>
+        <Reference Include="System.Data"/>
+        <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+            <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Windows"/>
+        <Reference Include="System.Windows.Forms"/>
+        <Reference Include="System.Xml"/>
+        <Reference Include="WindowsBase"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Constants\FieldConstants.cs"/>
+        <Compile Include="Constants\RegexConstants.cs"/>
+        <Compile Include="Exceptions\DiscoveryException.cs"/>
+        <Compile Include="Extensions\ChannelReaderExtensions.cs"/>
+        <Compile Include="Extensions\ObservableExtensions.cs"/>
+        <Compile Include="Helpers\OnvifHelper.cs"/>
+        <Compile Include="Interfaces\IDiscoveredCamera.cs"/>
+        <Compile Include="Interfaces\IDiscovery.cs"/>
+        <Compile Include="Interfaces\IDiscoveryClient.cs"/>
+        <Compile Include="Interfaces\IDiscoveryClientFactory.cs"/>
+        <Compile Include="Interfaces\IDiscoveryOdm.cs"/>
+        <Compile Include="Models\DiscoveredCamera.cs"/>
+        <Compile Include="Models\DiscoveryClient.cs"/>
+        <Compile Include="Models\DiscoveryClientFactory.cs"/>
+        <Compile Include="Models\XmlProbeResponse.cs"/>
+        <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="Services\Discovery.cs"/>
+        <Compile Include="Services\DiscoveryOdm.cs"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="App.config"/>
+        <None Include="packages.config"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\eLibNet4Core\eLibNet4Core.csproj">
+            <Project>{500c55c0-e408-41d3-925e-798978d6754b}</Project>
+            <Name>eLibNet4Core</Name>
+        </ProjectReference>
+    </ItemGroup>
+    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+         Other similar extension points exist, see Microsoft.Common.targets.
+    <Target Name="BeforeBuild">
+    </Target>
+    <Target Name="AfterBuild">
+    </Target>
+    -->
+
+</Project>

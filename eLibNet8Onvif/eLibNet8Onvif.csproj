@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+        <DocumentationFile>bin\Debug\eLibNet8Onvif.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+        <DocumentationFile>bin\Release\eLibNet8Onvif.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2"/>
+        <PackageReference Include="FSharp.Core" Version="9.0.100-beta.24466.6"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="System.Reactive.Core" Version="6.0.1"/>
+        <PackageReference Include="System.Reactive.Interfaces" Version="6.0.1"/>
+        <PackageReference Include="System.Reactive.Linq" Version="6.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="System.Reactive.Core">
+            <HintPath>..\Libs\System.Reactive.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Interfaces">
+            <HintPath>..\Libs\System.Reactive.Interfaces.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Reactive.Linq">
+            <HintPath>..\Libs\System.Reactive.Linq.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.discovery">
+            <HintPath>..\Libs\onvif.discovery.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.services">
+            <HintPath>..\Libs\onvif.services.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.session">
+            <HintPath>..\Libs\onvif.session.dll</HintPath>
+        </Reference>
+        <Reference Include="onvif.utils">
+            <HintPath>..\Libs\onvif.utils.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.activities">
+            <HintPath>..\Libs\utils.activities.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.async">
+            <HintPath>..\Libs\utils.async.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.bootstrapping">
+            <HintPath>..\Libs\utils.bootstrapping.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.common">
+            <HintPath>..\Libs\utils.common.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.diagnostics">
+            <HintPath>..\Libs\utils.diagnostics.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.fsharp">
+            <HintPath>..\Libs\utils.fsharp.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.linq">
+            <HintPath>..\Libs\utils.linq.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.wpf">
+            <HintPath>..\Libs\utils.wpf.dll</HintPath>
+        </Reference>
+        <Reference Include="utils.xml">
+            <HintPath>..\Libs\utils.xml.dll</HintPath>
+        </Reference>
+        <ProjectReference Include="..\eLibNet8Core\eLibNet8Core.csproj"/>
+    </ItemGroup>
+
+</Project>

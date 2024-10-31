@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet8Core", "eLibNet8Core\eLibNet8Core.csproj", "{F722C044-5C99-4A29-BD1A-23396ED3A7AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet8VideoSurveillanceApi", "eLibNet8VideoSurveillanceApi\eLibNet8VideoSurveillanceApi.csproj", "{8CDCA86C-3FE2-4588-99C8-DBCD9D07F728}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet4Core", "eLibNet4Core\eLibNet4Core.csproj", "{500C55C0-E408-41D3-925E-798978D6754B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet4VideoSurveillanceApi", "eLibNet4VideoSurveillanceApi\eLibNet4VideoSurveillanceApi.csproj", "{03A20DFB-4343-4621-86B9-1127D2257A8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet4Onvif", "eLibNet4Onvif\eLibNet4Onvif.csproj", "{C2AA4E04-760F-4DBE-947B-DA72E7709893}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLibNet8Onvif", "eLibNet8Onvif\eLibNet8Onvif.csproj", "{FC5A0CB7-E826-4897-A299-D7D76324B761}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F722C044-5C99-4A29-BD1A-23396ED3A7AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F722C044-5C99-4A29-BD1A-23396ED3A7AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F722C044-5C99-4A29-BD1A-23396ED3A7AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F722C044-5C99-4A29-BD1A-23396ED3A7AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CDCA86C-3FE2-4588-99C8-DBCD9D07F728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CDCA86C-3FE2-4588-99C8-DBCD9D07F728}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CDCA86C-3FE2-4588-99C8-DBCD9D07F728}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CDCA86C-3FE2-4588-99C8-DBCD9D07F728}.Release|Any CPU.Build.0 = Release|Any CPU
+		{500C55C0-E408-41D3-925E-798978D6754B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{500C55C0-E408-41D3-925E-798978D6754B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{500C55C0-E408-41D3-925E-798978D6754B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{500C55C0-E408-41D3-925E-798978D6754B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03A20DFB-4343-4621-86B9-1127D2257A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03A20DFB-4343-4621-86B9-1127D2257A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03A20DFB-4343-4621-86B9-1127D2257A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03A20DFB-4343-4621-86B9-1127D2257A8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2AA4E04-760F-4DBE-947B-DA72E7709893}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2AA4E04-760F-4DBE-947B-DA72E7709893}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2AA4E04-760F-4DBE-947B-DA72E7709893}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2AA4E04-760F-4DBE-947B-DA72E7709893}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC5A0CB7-E826-4897-A299-D7D76324B761}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC5A0CB7-E826-4897-A299-D7D76324B761}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC5A0CB7-E826-4897-A299-D7D76324B761}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC5A0CB7-E826-4897-A299-D7D76324B761}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
