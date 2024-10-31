@@ -67,7 +67,7 @@ public class Discovery : IDiscovery
         }
     }
 
-    private static async Task DiscoverFromClient(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<string, bool> discoveredDevicesAddresses, CancellationToken cancellationToken)
+    private static async Task DiscoverFromClient(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<Uri, bool> discoveredDevicesAddresses, CancellationToken cancellationToken)
     {
         try
         {
@@ -110,28 +110,26 @@ public class Discovery : IDiscovery
         var mfrQuery     = scopesArray.Where(scope => scope.Contains("mfr/") || scope.Contains("manufacturer/")).ToArray();
         var manufacturer = mfrQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex().Match(mfrQuery[0]).Groups[6].Value) : string.Empty;
         if (!manufacturer.IsEmpty())
-            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => str.Trim()),
-                probeMatch.Types.Split().Select(str => str.Trim()),
-                probeMatch.XAddrs.Split().Select(str => str.Trim()));
+            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+                probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
         var nameQuery = scopesArray.Where(scope => scope.Contains("name/")).ToArray();
         manufacturer = nameQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex().Match(nameQuery[0]).Groups[6].Value) : string.Empty;
         if (manufacturer.Contains(' '))
             manufacturer = manufacturer.Split()[0];
-        return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => str.Trim()),
-            probeMatch.Types.Split().Select(str => str.Trim()),
-            probeMatch.XAddrs.Split().Select(str => str.Trim()));
+        return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+            probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
     }
 
-    private static async Task ReceiveAnswers(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<string, bool> discoveredDevicesAddresses, Guid messageId, CancellationToken cancellationToken)
+    private static async Task ReceiveAnswers(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<Uri, bool> discoveredDevicesAddresses, Guid messageId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await foreach (var response in client.ReceiveResultsAsync(cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var discoveredDevice = ProcessResponse(response, messageId);
-            if (discoveredDevice is null || discoveredDevice.XAddresses.All(discoveredDevicesAddresses.ContainsKey))
+            if (discoveredDevice is null || discoveredDevice.ConnectionUris.All(discoveredDevicesAddresses.ContainsKey))
                 continue;
-            foreach (var xAddress in discoveredDevice.XAddresses)
+            foreach (var xAddress in discoveredDevice.ConnectionUris)
                 discoveredDevicesAddresses.TryAdd(xAddress, true);
             await channelWriter.WriteAsync(discoveredDevice, cancellationToken);
         }

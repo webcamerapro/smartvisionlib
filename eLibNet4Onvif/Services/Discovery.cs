@@ -65,7 +65,7 @@ namespace eLibNet4Onvif.Services
                         cancellationToken.ThrowIfCancellationRequested();
                         var clients = _discoveryClientFactory.CreateDiscoveryClients().ToArray();
                         if (clients.Length == 0) throw new DiscoveryException("Missing valid NetworkInterfaces, UdpClients could not be created");
-                        var discoveries = clients.Select(client => DiscoverFromClient(channelWriter, client, new ConcurrentDictionary<string, bool>(), cts.Token));
+                        var discoveries = clients.Select(client => DiscoverFromClient(channelWriter, client, new ConcurrentDictionary<Uri, bool>(), cts.Token));
                         await Task.WhenAny(Task.WhenAll(discoveries), Task.Delay(TimeSpan.FromSeconds(timeout), cts.Token));
                     } catch (Exception e) when (e is OperationCanceledException && timeoutCts.IsCancellationRequested)
                     {
@@ -82,7 +82,7 @@ namespace eLibNet4Onvif.Services
             }
         }
 
-        private static async Task DiscoverFromClient(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<string, bool> discoveredDevicesAddresses, CancellationToken cancellationToken)
+        private static async Task DiscoverFromClient(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<Uri, bool> discoveredDevicesAddresses, CancellationToken cancellationToken)
         {
             try
             {
@@ -131,28 +131,26 @@ namespace eLibNet4Onvif.Services
             var mfrQuery     = scopesArray.Where(scope => scope.Contains("mfr/") || scope.Contains("manufacturer/")).ToArray();
             var manufacturer = mfrQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex.Match(mfrQuery[0]).Groups[6].Value) : string.Empty;
             if (!manufacturer.IsEmpty())
-                return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex.Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => str.Trim()),
-                    probeMatch.Types.Split().Select(str => str.Trim()),
-                    probeMatch.XAddrs.Split().Select(str => str.Trim()));
+                return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex.Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+                    probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
             var nameQuery = scopesArray.Where(scope => scope.Contains("name/")).ToArray();
             manufacturer = nameQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex.Match(nameQuery[0]).Groups[6].Value) : string.Empty;
             if (manufacturer.Contains(' '))
                 manufacturer = manufacturer.Split()[0];
-            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex.Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => str.Trim()),
-                probeMatch.Types.Split().Select(str => str.Trim()),
-                probeMatch.XAddrs.Split().Select(str => str.Trim()));
+            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex.Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+                probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
         }
 
-        private static async Task ReceiveAnswers(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<string, bool> discoveredDevicesAddresses, Guid messageId, CancellationToken cancellationToken)
+        private static async Task ReceiveAnswers(ChannelWriter<IDiscoveredCamera> channelWriter, IDiscoveryClient client, ConcurrentDictionary<Uri, bool> discoveredDevicesAddresses, Guid messageId, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await client.ReceiveResultsAsync(cancellationToken).ForEachAsync(async udpReceiveResult =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var discoveredDevice = ProcessResponse(udpReceiveResult, messageId);
-                if (discoveredDevice != null && !discoveredDevice.XAddresses.All(discoveredDevicesAddresses.ContainsKey))
+                if (discoveredDevice != null && !discoveredDevice.ConnectionUris.All(discoveredDevicesAddresses.ContainsKey))
                 {
-                    foreach (var xAddress in discoveredDevice.XAddresses)
+                    foreach (var xAddress in discoveredDevice.ConnectionUris)
                         discoveredDevicesAddresses.TryAdd(xAddress, true);
                     await channelWriter.WriteAsync(discoveredDevice, cancellationToken);
                 }

@@ -48,17 +48,12 @@ public interface IDiscoveredCamera : IEquatable<IDiscoveredCamera>, INotifyPrope
     /// <summary>
     ///     Список Scopes.
     /// </summary>
-    public ObservableCollection<string> Scopes { get; }
-
-    /// <summary>
-    ///     Список типов.
-    /// </summary>
-    public ObservableCollection<string> Types { get; }
+    public ObservableCollection<Uri> Scopes { get; }
 
     /// <summary>
     ///     Список адресов подключения.
     /// </summary>
-    public ObservableCollection<string> XAddresses { get; }
+    public ObservableCollection<Uri> ConnectionUris { get; }
 
     /// <summary>
     ///     Список URI стримов.
@@ -69,29 +64,17 @@ public interface IDiscoveredCamera : IEquatable<IDiscoveredCamera>, INotifyPrope
     ///     Импортирует список Scopes.
     /// </summary>
     /// <param name="scopes">Список Scopes.</param>
-    public void ImportScopes(IEnumerable<string> scopes);
-
-    /// <summary>
-    ///     Импортирует список типов.
-    /// </summary>
-    /// <param name="types">Список типов.</param>
-    public void ImportTypes(IEnumerable<string> types);
+    public void ImportScopes(IEnumerable<Uri> scopes);
 
     /// <summary>
     ///     Импортирует список адресов подключения.
     /// </summary>
-    /// <param name="xAddresses">Список адресов подключения.</param>
-    public void ImportXAddresses(IEnumerable<string> xAddresses);
+    /// <param name="uris">Список адресов подключения.</param>
+    public void ImportConnectionUris(IEnumerable<Uri> uris);
 
     /// <summary>
     ///     Импортирует список URI стримов.
     /// </summary>
-    /// <param name="streamUris">Список URI потоков.</param>
+    /// <param name="streamUris">Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</param>
     public void ImportStreamUris(IEnumerable<KeyValuePair<string, Uri>> streamUris);
-
-    /// <summary>
-    ///     Импортирует список URI стримов.
-    /// </summary>
-    /// <param name="streamUris">Список URI потоков.</param>
-    public void ImportStreamUris(IEnumerable<KeyValuePair<string, string>> streamUris);
 }

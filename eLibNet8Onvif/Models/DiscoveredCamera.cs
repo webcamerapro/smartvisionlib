@@ -67,19 +67,16 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
     /// <param name="manufacturer">Производитель.</param>
     /// <param name="model">Модель.</param>
     /// <param name="scopes">Список Scopes.</param>
-    /// <param name="types">Список типов.</param>
-    /// <param name="xAddresses">Список адресов подключения.</param>
-    public DiscoveredCamera(IPAddress ipAddress, string manufacturer, string model, IEnumerable<string> scopes, IEnumerable<string> types, IEnumerable<string> xAddresses)
+    /// <param name="connectionUris">Список адресов подключения.</param>
+    public DiscoveredCamera(IPAddress ipAddress, string manufacturer, string model, IEnumerable<Uri> scopes, IEnumerable<Uri> connectionUris)
     {
         _ipAddress    = ipAddress;
         _manufacturer = manufacturer;
         _model        = model;
         foreach (var scope in scopes)
             Scopes.Add(scope);
-        foreach (var type in types)
-            Types.Add(type);
-        foreach (var xAddress in xAddresses)
-            XAddresses.Add(xAddress);
+        foreach (var connectionUri in connectionUris)
+            ConnectionUris.Add(connectionUri);
     }
 
     /// <summary>
@@ -93,10 +90,9 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
     /// <param name="manufacturer">Производитель.</param>
     /// <param name="model">Модель.</param>
     /// <param name="scopes">Список Scopes.</param>
-    /// <param name="types">Список типов.</param>
-    /// <param name="xAddresses">Список адресов подключения.</param>
+    /// <param name="connectionUris">Список адресов подключения.</param>
     /// <param name="streamUris">Словарь токенов профилей и URI стримов.</param>
-    public DiscoveredCamera(IPAddress ipAddress, MACAddress macAddress, string title, string username, string password, string manufacturer, string model, IEnumerable<string> scopes, IEnumerable<string> types, IEnumerable<string> xAddresses,
+    public DiscoveredCamera(IPAddress ipAddress, MACAddress macAddress, string title, string username, string password, string manufacturer, string model, IEnumerable<Uri> scopes, IEnumerable<Uri> connectionUris,
         IEnumerable<KeyValuePair<string, Uri>> streamUris)
     {
         _ipAddress    = ipAddress;
@@ -108,28 +104,21 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
         _model        = model;
         foreach (var scope in scopes)
             Scopes.Add(scope);
-        foreach (var type in types)
-            Types.Add(type);
-        foreach (var xAddress in xAddresses)
-            XAddresses.Add(xAddress);
+        foreach (var connectionUri in connectionUris)
+            ConnectionUris.Add(connectionUri);
         foreach (var streamUri in streamUris)
             StreamUris.Add(streamUri.Key, streamUri.Value);
     }
-
+    
     /// <summary>
     ///     Список Scopes.
     /// </summary>
-    public ObservableCollection<string> Scopes { get; } = [];
-
-    /// <summary>
-    ///     Список типов.
-    /// </summary>
-    public ObservableCollection<string> Types { get; } = [];
+    public ObservableCollection<Uri> Scopes { get; } = [];
 
     /// <summary>
     ///     Список адресов подключения.
     /// </summary>
-    public ObservableCollection<string> XAddresses { get; } = [];
+    public ObservableCollection<Uri> ConnectionUris { get; } = [];
 
     /// <summary>
     ///     Словарь токенов профилей и URI стримов.
@@ -139,14 +128,14 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
     /// <summary>
     ///     Импортирует список адресов подключения.
     /// </summary>
-    /// <param name="xAddresses">Список адресов подключения.</param>
-    public void ImportXAddresses(IEnumerable<string> xAddresses)
+    /// <param name="connectionUris">Список адресов подключения.</param>
+    public void ImportConnectionUris(IEnumerable<Uri> connectionUris)
     {
-        OnPropertyChanging(nameof(XAddresses));
-        XAddresses.Clear();
-        foreach (var xAddress in xAddresses)
-            XAddresses.Add(xAddress);
-        OnPropertyChanged(nameof(XAddresses));
+        OnPropertyChanging(nameof(ConnectionUris));
+        ConnectionUris.Clear();
+        foreach (var connectionUri in connectionUris)
+            ConnectionUris.Add(connectionUri);
+        OnPropertyChanged(nameof(ConnectionUris));
     }
 
     /// <summary>
@@ -165,34 +154,20 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
         (Manufacturer?.Equals(other.Manufacturer) ?? other.Manufacturer is null) &&
         (Model?.Equals(other.Model) ?? other.Model is null) &&
         Scopes.SequenceEqual(other.Scopes) &&
-        Types.SequenceEqual(other.Types) &&
-        XAddresses.SequenceEqual(other.XAddresses) &&
+        ConnectionUris.SequenceEqual(other.ConnectionUris) &&
         StreamUris.SequenceEqual(other.StreamUris);
 
     /// <summary>
     ///     Импортирует список Scopes.
     /// </summary>
     /// <param name="scopes">Список Scopes.</param>
-    public void ImportScopes(IEnumerable<string> scopes)
+    public void ImportScopes(IEnumerable<Uri> scopes)
     {
         OnPropertyChanging(nameof(Scopes));
         Scopes.Clear();
         foreach (var scope in scopes)
-            Types.Add(scope);
+            Scopes.Add(scope);
         OnPropertyChanged(nameof(Scopes));
-    }
-
-    /// <summary>
-    ///     Импортирует список типов.
-    /// </summary>
-    /// <param name="types">Список типов.</param>
-    public void ImportTypes(IEnumerable<string> types)
-    {
-        OnPropertyChanging(nameof(Types));
-        Types.Clear();
-        foreach (var type in types)
-            Types.Add(type);
-        OnPropertyChanged(nameof(Types));
     }
 
     /// <summary>
@@ -209,20 +184,6 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
     }
 
     /// <summary>
-    ///     Импортирует список URI стримов.
-    /// </summary>
-    /// <param name="streamUris">Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</param>
-    public void ImportStreamUris(IEnumerable<KeyValuePair<string, string>> streamUris)
-    {
-        OnPropertyChanging(nameof(StreamUris));
-        StreamUris.Clear();
-        foreach (var streamUri in streamUris)
-            if (Uri.TryCreate(streamUri.Value, UriKind.Absolute, out var uri))
-                StreamUris.Add(streamUri.Key, uri);
-        OnPropertyChanged(nameof(StreamUris));
-    }
-
-    /// <summary>
     ///     Определяет, равен ли текущий объект другому объекту.
     /// </summary>
     /// <param name="other">Объект для сравнения.</param>
@@ -233,5 +194,5 @@ public partial class DiscoveredCamera : ObservableObject, IDiscoveredCamera
     ///     Возвращает хэш-код для текущего объекта.
     /// </summary>
     /// <returns>Хэш-код для текущего объекта.</returns>
-    public override int GetHashCode() => HashCode.Combine(nameof(IDiscoveredCamera), IpAddress, Scopes, Types, XAddresses, StreamUris);
+    public override int GetHashCode() => HashCode.Combine(nameof(IDiscoveredCamera), IpAddress, Scopes, ConnectionUris, StreamUris);
 }

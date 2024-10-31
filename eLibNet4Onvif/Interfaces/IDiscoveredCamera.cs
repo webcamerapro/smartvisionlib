@@ -50,17 +50,12 @@ namespace eLibNet4Onvif.Interfaces
         /// <summary>
         ///     Список Scopes.
         /// </summary>
-        ObservableCollection<string> Scopes { get; }
-
-        /// <summary>
-        ///     Список типов.
-        /// </summary>
-        ObservableCollection<string> Types { get; }
+        ObservableCollection<Uri> Scopes { get; }
 
         /// <summary>
         ///     Список адресов подключения.
         /// </summary>
-        ObservableCollection<string> XAddresses { get; }
+        ObservableCollection<Uri> ConnectionUris { get; }
 
         /// <summary>
         ///     Список URI стримов.
@@ -71,30 +66,18 @@ namespace eLibNet4Onvif.Interfaces
         ///     Импортирует список Scopes.
         /// </summary>
         /// <param name="scopes">Список Scopes.</param>
-        void ImportScopes(IEnumerable<string> scopes);
-
-        /// <summary>
-        ///     Импортирует список типов.
-        /// </summary>
-        /// <param name="types">Список типов.</param>
-        void ImportTypes(IEnumerable<string> types);
+        void ImportScopes(IEnumerable<Uri> scopes);
 
         /// <summary>
         ///     Импортирует список адресов подключения.
         /// </summary>
-        /// <param name="xAddresses">Список адресов подключения.</param>
-        void ImportXAddresses(IEnumerable<string> xAddresses);
+        /// <param name="uris">Список адресов подключения.</param>
+        void ImportConnectionUris(IEnumerable<Uri> uris);
 
         /// <summary>
         ///     Импортирует список URI стримов.
         /// </summary>
         /// <param name="streamUris">Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</param>
         void ImportStreamUris(IEnumerable<KeyValuePair<string, Uri>> streamUris);
-
-        /// <summary>
-        ///     Импортирует список URI стримов.
-        /// </summary>
-        /// <param name="streamUris">Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</param>
-        void ImportStreamUris(IEnumerable<KeyValuePair<string, string>> streamUris);
     }
 }
