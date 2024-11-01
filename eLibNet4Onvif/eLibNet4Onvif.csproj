@@ -151,7 +151,6 @@
         <Compile Include="Interfaces\IDiscovery.cs"/>
         <Compile Include="Interfaces\IDiscoveryClient.cs"/>
         <Compile Include="Interfaces\IDiscoveryClientFactory.cs"/>
-        <Compile Include="Interfaces\IDiscoveryOdm.cs"/>
         <Compile Include="Models\DiscoveredCamera.cs"/>
         <Compile Include="Models\DiscoveryClient.cs"/>
         <Compile Include="Models\DiscoveryClientFactory.cs"/>

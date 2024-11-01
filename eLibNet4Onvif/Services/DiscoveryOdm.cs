@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using eLibNet4Core.Extensions;
-using eLibNet4Core.Helpers;
 using eLibNet4Onvif.Extensions;
 using eLibNet4Onvif.Interfaces;
 using eLibNet4Onvif.Models;
@@ -20,13 +19,8 @@ namespace eLibNet4Onvif.Services
     /// <summary>
     ///     Класс, предоставляющий функциональность для асинхронного поиска Onvif устройств с использованием библиотеки <see cref="odm.core" />.
     /// </summary>
-    public class DiscoveryOdm : IDiscoveryOdm
+    public class DiscoveryOdm : IDiscovery
     {
-        private readonly INvtManager _manager = new NvtManager();
-        private ChannelWriter<IDiscoveredCamera> _channelWriter;
-        private CancellationTokenSource _ctsLinked;
-        private CancellationTokenSource _ctsTimeOut;
-
         /// <summary>
         ///     Возвращает значение, указывающее, запущен ли процесс поиска.
         /// </summary>
@@ -46,10 +40,8 @@ namespace eLibNet4Onvif.Services
             try
             {
                 IsStarted = true;
-                DisposeHelper.DisposeAndSet(ref _ctsTimeOut, new CancellationTokenSource(TimeSpan.FromSeconds(timeOut)));
-                DisposeHelper.DisposeAndSet(ref _ctsLinked, CancellationTokenSource.CreateLinkedTokenSource(_ctsTimeOut.Token, cancellationToken));
                 var channel = Channel.CreateUnbounded<IDiscoveredCamera>();
-                _ = DiscoveryAsync(channel.Writer, timeOut, _ctsLinked.Token);
+                _ = DiscoveryAsync(channel.Writer, timeOut, cancellationToken);
                 return channel.Reader.ReadAllAsync(cancellationToken);
             } finally
             {
@@ -72,57 +64,59 @@ namespace eLibNet4Onvif.Services
             try
             {
                 IsStarted = true;
-                DisposeHelper.DisposeAndSet(ref _ctsTimeOut, new CancellationTokenSource(TimeSpan.FromSeconds(timeOut)));
-                DisposeHelper.DisposeAndSet(ref _ctsLinked, CancellationTokenSource.CreateLinkedTokenSource(_ctsTimeOut.Token, cancellationToken));
-                await DiscoveryAsync(channelWriter, timeOut, _ctsLinked.Token).ConfigureAwait(false);
+                await DiscoveryAsync(channelWriter, timeOut, cancellationToken).ConfigureAwait(false);
             } finally
             {
                 IsStarted = false;
             }
         }
 
-        private async Task DiscoveryAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken)
+        private static async Task DiscoveryAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            _channelWriter = channelWriter;
             await Task.Run(() =>
             {
-                _manager.Observe().TakeUntil(cancellationToken).OnCompleted(CompletedAction).OnError(ErrorAction).Subscribe(SubscribeAction);
-                _manager.Discover(TimeSpan.FromSeconds(timeOut));
+                cancellationToken.ThrowIfCancellationRequested();
+                using (var ctsTimeOut = new CancellationTokenSource(TimeSpan.FromSeconds(timeOut)))
+                {
+                    using (var ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(ctsTimeOut.Token, cancellationToken))
+                    {
+                        INvtManager nvtManager = new NvtManager();
+                        nvtManager.Observe().TakeUntil(ctsLinked.Token).OnCompleted(() =>
+                        {
+                            channelWriter.TryComplete();
+                        }).OnError(exception =>
+                        {
+                            if (exception is OperationCanceledException)
+                                channelWriter.TryComplete();
+                            else
+                                channelWriter.TryComplete(exception);
+                        }).Subscribe(nvtNode =>
+                        {
+                            if (TryCreateDiscoveredCamera(nvtNode, out var discoveredCamera))
+                                channelWriter.TryWrite(discoveredCamera);
+                        });
+                        nvtManager.Discover(TimeSpan.FromSeconds(timeOut));
+                    }
+                }
             }, cancellationToken).ConfigureAwait(false);
         }
-
-        private void CompletedAction()
+        
+        private static bool TryCreateDiscoveredCamera(INvtNode nvtNode, [CanBeNull] out IDiscoveredCamera discoveredCamera)
         {
-            _channelWriter?.TryComplete();
-            DisposeHelper.DisposeAndDefault(ref _ctsTimeOut);
-            DisposeHelper.DisposeAndDefault(ref _ctsLinked);
-        }
-
-        private void SubscribeAction(INvtNode nvtNode)
-        {
-            var nvtIdentity        = nvtNode.identity;
-            if (nvtIdentity.uris.Length == 0) 
-                return;
+            discoveredCamera = null;
+            var nvtIdentity = nvtNode.identity;
+            if (nvtIdentity.uris.Length == 0)
+                return false;
             var ipAddress = nvtIdentity.uris.Select(uri => Dns.GetHostAddresses(uri.Host)[0]).FirstOrDefault(uriIpAddress => uriIpAddress.AddressFamily == AddressFamily.InterNetwork);
-            if (ipAddress == null)
-                return;
-            _channelWriter?.TryWrite(new DiscoveredCamera(ipAddress, 
-                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("manufacturer/") || scope.AbsolutePath.Contains("mfr/") || 
-                                                           scope.AbsolutePath.Contains("name/"))?.GetRightAfterSegmentsPriority("manufacturer/", "mfr/", "name/") ?? "Unknown", 
-                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("hardware/"))?.GetRightAfterSegment("hardware/") ?? "Unknown", 
-                nvtIdentity.scopes, 
-                nvtIdentity.uris));
-        }
-
-        private void ErrorAction(Exception e)
-        {
-            if (e is OperationCanceledException)
-                _channelWriter?.TryComplete();
-            else
-                _channelWriter?.TryComplete(e);
-            DisposeHelper.DisposeAndDefault(ref _ctsTimeOut);
-            DisposeHelper.DisposeAndDefault(ref _ctsLinked);
+            if (ipAddress is null)
+                return false;
+            discoveredCamera = new DiscoveredCamera(ipAddress,
+                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("manufacturer/") || scope.AbsolutePath.Contains("mfr/") ||
+                                                           scope.AbsolutePath.Contains("name/"))?.GetRightAfterSegmentsPriority("manufacturer/", "mfr/", "name/") ?? "Unknown",
+                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("hardware/"))?.GetRightAfterSegment("hardware/") ?? "Unknown",
+                nvtIdentity.scopes,
+                nvtIdentity.uris);
+            return true;
         }
     }
 }

@@ -31,6 +31,11 @@ namespace eLibNet4Onvif.Services
         private readonly DiscoveryClientFactory _discoveryClientFactory = new DiscoveryClientFactory();
 
         /// <summary>
+        ///     Возвращает значение, указывающее, запущен ли процесс поиска.
+        /// </summary>
+        public bool IsStarted { get; private set; }
+        
+        /// <summary>
         ///     Запускает асинхронное обнаружение устройств.
         /// </summary>
         /// <param name="timeout">Таймаут в секундах.</param>
@@ -38,10 +43,18 @@ namespace eLibNet4Onvif.Services
         /// <returns>Асинхронный перечислитель обнаруженных камер.</returns>
         public IAsyncEnumerable<IDiscoveredCamera> StartAsync(int timeout, CancellationToken cancellationToken = default)
         {
+            if (IsStarted)
+                throw new Exception("Поиск уже запущен.");
             cancellationToken.ThrowIfCancellationRequested();
-            var channel = Channel.CreateUnbounded<IDiscoveredCamera>();
-            _ = DiscoverFromAllClients(channel.Writer, timeout, cancellationToken);
-            return channel.Reader.ReadAllAsync(cancellationToken);
+            try
+            {
+                var channel = Channel.CreateUnbounded<IDiscoveredCamera>();
+                _ = DiscoverFromAllClients(channel.Writer, timeout, cancellationToken);
+                return channel.Reader.ReadAllAsync(cancellationToken);
+            } finally
+            {
+                IsStarted = false;
+            }
         }
 
         /// <summary>
@@ -51,7 +64,19 @@ namespace eLibNet4Onvif.Services
         /// <param name="timeout">Таймаут в секундах.</param>
         /// <param name="cancellationToken">Токен отмены.</param>
         /// <returns>Задача, представляющая асинхронную операцию.</returns>
-        public Task StartAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeout, CancellationToken cancellationToken = default) => DiscoverFromAllClients(channelWriter, timeout, cancellationToken);
+        public Task StartAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeout, CancellationToken cancellationToken = default)
+        {
+            if (IsStarted)
+                throw new Exception("Поиск уже запущен.");
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                return DiscoverFromAllClients(channelWriter, timeout, cancellationToken);
+            } finally
+            {
+                IsStarted = false;
+            }
+        }
 
         [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
         private async Task DiscoverFromAllClients(ChannelWriter<IDiscoveredCamera> channelWriter, int timeout, CancellationToken cancellationToken)

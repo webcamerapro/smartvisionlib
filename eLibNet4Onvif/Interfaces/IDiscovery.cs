@@ -11,6 +11,11 @@ namespace eLibNet4Onvif.Interfaces
     public interface IDiscovery
     {
         /// <summary>
+        ///     Возвращает значение, указывающее, запущен ли процесс поиска.
+        /// </summary>
+        bool IsStarted { get; }
+        
+        /// <summary>
         ///     Запускает асинхронное обнаружение устройств.
         /// </summary>
         /// <param name="timeout">Таймаут в секундах.</param>
