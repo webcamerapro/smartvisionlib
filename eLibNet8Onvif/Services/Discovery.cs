@@ -25,13 +25,13 @@ public class Discovery : IDiscovery
     ///     Возвращает значение, указывающее, запущен ли процесс поиска.
     /// </summary>
     public bool IsStarted { get; private set; }
-    
+
     /// <summary>
     ///     Запускает асинхронное обнаружение устройств.
     /// </summary>
     /// <param name="timeout">Таймаут в секундах.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
-    /// <returns>Асинхронный перечислитель обнаруженных камер.</returns>
+    /// <returns>Асинхронный перечислитель <see cref="IDiscoveredCamera" /> обнаруженных камер.</returns>
     public IAsyncEnumerable<IDiscoveredCamera> StartAsync(int timeout, CancellationToken cancellationToken = default)
     {
         if (IsStarted)
@@ -136,13 +136,15 @@ public class Discovery : IDiscovery
         var mfrQuery     = scopesArray.Where(scope => scope.Contains("mfr/") || scope.Contains("manufacturer/")).ToArray();
         var manufacturer = mfrQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex().Match(mfrQuery[0]).Groups[6].Value) : string.Empty;
         if (!manufacturer.IsEmpty())
-            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+            return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value),
+                probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
                 probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
         var nameQuery = scopesArray.Where(scope => scope.Contains("name/")).ToArray();
         manufacturer = nameQuery.Length > 0 ? Uri.UnescapeDataString(RegexConstants.OnvifUriRegex().Match(nameQuery[0]).Groups[6].Value) : string.Empty;
         if (manufacturer.Contains(' '))
             manufacturer = manufacturer.Split()[0];
-        return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value), probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
+        return new DiscoveredCamera(remoteEndpoint.Address, manufacturer, Uri.UnescapeDataString(RegexConstants.OnvifHardwareRegex().Match(probeMatch.Scopes).Value),
+            probeMatch.Scopes.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)),
             probeMatch.XAddrs.Split().Select(str => new Uri(str.Trim(), UriKind.RelativeOrAbsolute)));
     }
 

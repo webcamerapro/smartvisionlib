@@ -11,7 +11,7 @@ public interface IDiscovery
     ///     Возвращает значение, указывающее, запущен ли процесс поиска.
     /// </summary>
     public bool IsStarted { get; }
-        
+
     /// <summary>
     ///     Запускает асинхронное обнаружение устройств.
     /// </summary>

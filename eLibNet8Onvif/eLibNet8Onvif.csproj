@@ -15,6 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="AsyncEnumerator" Version="4.0.2"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2"/>
         <PackageReference Include="FSharp.Core" Version="9.0.100-beta.24466.6"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>

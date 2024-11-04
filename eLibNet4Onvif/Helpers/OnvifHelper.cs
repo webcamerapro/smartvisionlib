@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
+using eLibNet4Onvif.Extensions;
+using JetBrains.Annotations;
 using Microsoft.FSharp.Control;
 using odm.core;
 using onvif.services;
@@ -17,21 +20,31 @@ namespace eLibNet4Onvif.Helpers
     public static class OnvifHelper
     {
         /// <summary>
-        ///     Создаёт сессию NVT.
+        ///     Создаёт сессию NVT. Создает новый менеджер сессий <see cref="NvtSessionFactory" />. Рекомендуется использовать для одиночного подключения, когда менеджер сессий заранее не определен.
+        ///     В иных случаях используйте уже существующий менеджер сессий:
+        ///     <code>
+        ///         var nvtSessionFactory = new NvtSessionFactory(new NetworkCredential {"username", "password"});
+        ///         var nvtSession = nvtSessionFactory.CreateSession("uri");
+        ///     </code>
         /// </summary>
-        /// <param name="uri">URI устройства.</param>
         /// <param name="networkCredential">Учетные данные сети.</param>
+        /// <param name="uri">URI устройства.</param>
         /// <returns>Сессия NVT.</returns>
-        public static INvtSession CreateNvtSession(Uri uri, NetworkCredential networkCredential) => new NvtSessionFactory(networkCredential).CreateSession(uri);
+        public static INvtSession CreateSession(NetworkCredential networkCredential, Uri uri) => new NvtSessionFactory(networkCredential).CreateSession(uri);
 
         /// <summary>
-        ///     Создаёт сессию NVT.
+        ///     Создаёт сессию NVT. Создает новый менеджер сессий <see cref="NvtSessionFactory" />. Рекомендуется использовать для одиночного подключения, когда менеджер сессий заранее не определен.
+        ///     В иных случаях используйте уже существующий менеджер сессий:
+        ///     <code>
+        ///         var nvtSessionFactory = new NvtSessionFactory(new NetworkCredential {"username", "password"});
+        ///         var nvtSession = nvtSessionFactory.CreateSession("uri");
+        ///     </code>
         /// </summary>
-        /// <param name="uri">URI устройства.</param>
         /// <param name="username">Имя пользователя.</param>
         /// <param name="password">Пароль.</param>
+        /// <param name="uri">URI устройства.</param>
         /// <returns>Сессия NVT.</returns>
-        public static INvtSession CreateNvtSession(Uri uri, string username, string password) => CreateNvtSession(uri, new NetworkCredential { UserName = username, Password = password });
+        public static INvtSession CreateSession(string username, string password, Uri uri) => CreateSession(new NetworkCredential { UserName = username, Password = password }, uri);
 
         /// <summary>
         ///     Изменяет пароль пользователя.
@@ -60,13 +73,13 @@ namespace eLibNet4Onvif.Helpers
         public static async Task ChangePasswordAsync(INvtSession nvtSession, string newPassword, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            foreach (var user in await FSharpAsync.StartAsTask(nvtSession.GetUsers(), null, cancellationToken))
+            foreach (var user in await FSharpAsync.StartAsTask(nvtSession.GetUsers(), null, cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (user.username != nvtSession.credentials.UserName)
                     continue;
                 user.password = newPassword;
-                await FSharpAsync.StartAsTask(nvtSession.SetUser(new[] { user }), null, cancellationToken);
+                await FSharpAsync.StartAsTask(nvtSession.SetUser(new[] { user }), null, cancellationToken).ConfigureAwait(false);
                 nvtSession.credentials.Password = newPassword;
                 return;
             }
@@ -79,6 +92,7 @@ namespace eLibNet4Onvif.Helpers
         /// <param name="profileToken">Токен профиля.</param>
         /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp://username:password@address").</param>
         /// <returns>URI потока, если найден; иначе <c>null</c>.</returns>
+        [CanBeNull]
         public static Uri GetStreamUri(INvtSession nvtSession, string profileToken, bool addCredentialData = false) =>
             Uri.TryCreate(addCredentialData
                 ? nvtSession.GetStreamUri(new StreamSetup { transport = new Transport { protocol = TransportProtocol.rtsp } }, profileToken).RunSynchronously().uri
@@ -95,16 +109,14 @@ namespace eLibNet4Onvif.Helpers
         /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp://username:password@address").</param>
         /// <param name="cancellationToken">Токен отмены.</param>
         /// <returns>URI потока, если найден; иначе <c>null</c>.</returns>
-        public static async Task<Uri> GetStreamUriAsync(INvtSession nvtSession, string profileToken, bool addCredentialData = false, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            return Uri.TryCreate(addCredentialData
-                ? (await FSharpAsync.StartAsTask(nvtSession.GetStreamUri(new StreamSetup { transport = new Transport { protocol = TransportProtocol.rtsp } }, profileToken), null, cancellationToken)).uri.Replace("://",
+        [ItemCanBeNull]
+        public static async Task<Uri> GetStreamUriAsync(INvtSession nvtSession, string profileToken, bool addCredentialData = false, CancellationToken cancellationToken = default) => Uri.TryCreate(addCredentialData
+                ? (await FSharpAsync.StartAsTask(nvtSession.GetStreamUri(new StreamSetup { transport = new Transport { protocol = TransportProtocol.rtsp } }, profileToken), null, cancellationToken).ConfigureAwait(false)).uri.Replace("://",
                     "://" + nvtSession.credentials.UserName + ":" + nvtSession.credentials.Password + "@")
-                : (await FSharpAsync.StartAsTask(nvtSession.GetStreamUri(new StreamSetup { transport = new Transport { protocol = TransportProtocol.rtsp } }, profileToken), null, cancellationToken)).uri, UriKind.Absolute, out var streamUri)
-                ? streamUri
-                : null;
-        }
+                : (await FSharpAsync.StartAsTask(nvtSession.GetStreamUri(new StreamSetup { transport = new Transport { protocol = TransportProtocol.rtsp } }, profileToken), null, cancellationToken).ConfigureAwait(false)).uri, UriKind.Absolute,
+            out var streamUri)
+            ? streamUri
+            : null;
 
         /// <summary>
         ///     Получает все профили и их URI потока.
@@ -121,18 +133,43 @@ namespace eLibNet4Onvif.Helpers
         /// <param name="nvtSession">Сессия NVT.</param>
         /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp://username:password@address").</param>
         /// <param name="cancellationToken">Токен отмены.</param>
-        /// <returns>Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</returns>
-        public static async Task<IEnumerable<KeyValuePair<string, Uri>>> GetAllStreamUrisAsync(INvtSession nvtSession, bool addCredentialData = false, CancellationToken cancellationToken = default)
+        /// <returns>Асинхронный перечислитель <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</returns>
+        public static IAsyncEnumerable<KeyValuePair<string, Uri>> GetAllStreamUrisAsync(INvtSession nvtSession, bool addCredentialData = false, CancellationToken cancellationToken = default)
         {
-            var streamUris = new List<KeyValuePair<string, Uri>>();
-            foreach (var profile in await FSharpAsync.StartAsTask(nvtSession.GetProfiles(), null, cancellationToken))
-            {
-                var uri = await GetStreamUriAsync(nvtSession, profile.token, addCredentialData, cancellationToken);
-                if (uri != null)
-                    streamUris.Add(new KeyValuePair<string, Uri>(profile.token, uri));
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var channel = Channel.CreateUnbounded<KeyValuePair<string, Uri>>();
+            _ = ReceivingStreamUrisAsync(channel.Writer, nvtSession, addCredentialData, cancellationToken);
+            return channel.Reader.ReadAllAsync(cancellationToken);
+        }
 
-            return streamUris;
+        /// <summary>
+        ///     Асинхронно получает все профили и их URI потока с использованием указанного ChannelWriter.
+        /// </summary>
+        /// <param name="channelWriter">ChannelWriter для записи найденных профилей и их URI потока.</param>
+        /// <param name="nvtSession">Сессия NVT.</param>
+        /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp://username:password@address").</param>
+        /// <param name="cancellationToken">Токен отмены.</param>
+        /// <returns>Задача, представляющая асинхронную операцию.</returns>
+        public static async Task GetAllStreamUrisAsync(ChannelWriter<KeyValuePair<string, Uri>> channelWriter, INvtSession nvtSession, bool addCredentialData = false, CancellationToken cancellationToken = default) =>
+            await ReceivingStreamUrisAsync(channelWriter, nvtSession, addCredentialData, cancellationToken).ConfigureAwait(false);
+
+        private static async Task ReceivingStreamUrisAsync(ChannelWriter<KeyValuePair<string, Uri>> channelWriter, INvtSession nvtSession, bool addCredentialData, CancellationToken cancellationToken)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var profile in await FSharpAsync.StartAsTask(nvtSession.GetProfiles(), null, cancellationToken).ConfigureAwait(false))
+                    if (await GetStreamUriAsync(nvtSession, profile.token, addCredentialData, cancellationToken).ConfigureAwait(false) is Uri uri)
+                        await channelWriter.WriteAsync(new KeyValuePair<string, Uri>(profile.token, uri), cancellationToken).ConfigureAwait(false);
+                channelWriter.TryComplete();
+            } catch (Exception e) when (e is OperationCanceledException)
+            {
+                channelWriter.TryComplete();
+            } catch (Exception e)
+            {
+                channelWriter.TryComplete(e);
+                throw;
+            }
         }
     }
 }

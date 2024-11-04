@@ -14,7 +14,7 @@ namespace eLibNet4Onvif.Interfaces
         ///     Возвращает значение, указывающее, запущен ли процесс поиска.
         /// </summary>
         bool IsStarted { get; }
-        
+
         /// <summary>
         ///     Запускает асинхронное обнаружение устройств.
         /// </summary>

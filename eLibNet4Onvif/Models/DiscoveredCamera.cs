@@ -6,10 +6,16 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Dasync.Collections;
+using eLibNet4Core.Extensions;
 using eLibNet4Core.Helpers;
 using eLibNet4Core.Models;
+using eLibNet4Onvif.Helpers;
 using eLibNet4Onvif.Interfaces;
 using JetBrains.Annotations;
+using odm.core;
 
 namespace eLibNet4Onvif.Models
 {
@@ -22,15 +28,22 @@ namespace eLibNet4Onvif.Models
         private MACAddress _macAddress;
         private string _manufacturer;
         private string _model;
-        private string _password;
         private string _title;
-        private string _username;
+
+        /// <summary>
+        ///     Создаёт экземпляр класса <see cref="DiscoveredCamera" />.
+        /// </summary>
+        public DiscoveredCamera()
+        {
+            Credential     = new NetworkCredential();
+            SessionFactory = new NvtSessionFactory(Credential);
+        }
 
         /// <summary>
         ///     Создаёт экземпляр класса <see cref="DiscoveredCamera" />.
         /// </summary>
         /// <param name="ipAddress">IP-адрес камеры.</param>
-        public DiscoveredCamera(IPAddress ipAddress) => _ipAddress = ipAddress;
+        public DiscoveredCamera(IPAddress ipAddress) : this() => _ipAddress = ipAddress;
 
         /// <summary>
         ///     Создаёт экземпляр класса <see cref="DiscoveredCamera" />.
@@ -40,9 +53,8 @@ namespace eLibNet4Onvif.Models
         /// <param name="model">Модель.</param>
         /// <param name="scopes">Список Scopes.</param>
         /// <param name="connectionUris">Список адресов подключения.</param>
-        public DiscoveredCamera(IPAddress ipAddress, string manufacturer, string model, IEnumerable<Uri> scopes, IEnumerable<Uri> connectionUris)
+        public DiscoveredCamera(IPAddress ipAddress, string manufacturer, string model, IEnumerable<Uri> scopes, IEnumerable<Uri> connectionUris) : this(ipAddress)
         {
-            _ipAddress    = ipAddress;
             _manufacturer = manufacturer;
             _model        = model;
             foreach (var scope in scopes)
@@ -65,19 +77,12 @@ namespace eLibNet4Onvif.Models
         /// <param name="connectionUris">Список адресов подключения.</param>
         /// <param name="streamUris">Словарь токенов профилей и URI стримов.</param>
         public DiscoveredCamera(IPAddress ipAddress, MACAddress macAddress, string title, string username, string password, string manufacturer, string model, IEnumerable<Uri> scopes, IEnumerable<Uri> connectionUris,
-            IEnumerable<KeyValuePair<string, Uri>> streamUris)
+            IEnumerable<KeyValuePair<string, Uri>> streamUris) : this(ipAddress, manufacturer, model, scopes, connectionUris)
         {
-            _ipAddress    = ipAddress;
-            _macAddress   = macAddress;
-            _title        = title;
-            _username     = username;
-            _password     = password;
-            _manufacturer = manufacturer;
-            _model        = model;
-            foreach (var scope in scopes)
-                Scopes.Add(scope);
-            foreach (var connectionUri in connectionUris)
-                ConnectionUris.Add(connectionUri);
+            _macAddress         = macAddress;
+            _title              = title;
+            Credential.UserName = username;
+            Credential.Password = password;
             foreach (var streamUri in streamUris)
                 StreamUris.Add(streamUri.Key, streamUri.Value);
         }
@@ -91,18 +96,11 @@ namespace eLibNet4Onvif.Models
         /// <summary>
         ///     IP-адрес.
         /// </summary>
-        [NotNull]
+        [CanBeNull]
         public IPAddress IpAddress
         {
             get => _ipAddress;
-            set
-            {
-                if (_ipAddress.Equals(value))
-                    return;
-                OnPropertyChanging();
-                _ipAddress = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _ipAddress, value);
         }
 
         /// <summary>
@@ -112,15 +110,18 @@ namespace eLibNet4Onvif.Models
         public MACAddress MacAddress
         {
             get => _macAddress;
-            set
-            {
-                if (_macAddress?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _macAddress = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _macAddress, value);
         }
+
+        /// <summary>
+        ///     Предоставляет учетные данные для схем проверки подлинности на основе пароля.
+        /// </summary>
+        public NetworkCredential Credential { get; }
+
+        /// <summary>
+        ///     Менеджер сессий.
+        /// </summary>
+        public NvtSessionFactory SessionFactory { get; }
 
         /// <summary>
         ///     Наименование.
@@ -129,48 +130,27 @@ namespace eLibNet4Onvif.Models
         public string Title
         {
             get => _title;
-            set
-            {
-                if (_title?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _title = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _title, value);
         }
 
         /// <summary>
         ///     Имя пользователя.
         /// </summary>
-        [CanBeNull]
+        [NotNull]
         public string Username
         {
-            get => _username;
-            set
-            {
-                if (_username?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _username = value;
-                OnPropertyChanged();
-            }
+            get => Credential.UserName;
+            set => SetProperty(Credential.UserName, value, Credential, (credential, username) => credential.UserName = username);
         }
 
         /// <summary>
         ///     Пароль.
         /// </summary>
-        [CanBeNull]
+        [NotNull]
         public string Password
         {
-            get => _password;
-            set
-            {
-                if (_password?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _password = value;
-                OnPropertyChanged();
-            }
+            get => Credential.Password;
+            set => SetProperty(Credential.Password, value, Credential, (credential, password) => credential.Password = password);
         }
 
         /// <summary>
@@ -180,14 +160,7 @@ namespace eLibNet4Onvif.Models
         public string Manufacturer
         {
             get => _manufacturer;
-            set
-            {
-                if (_manufacturer?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _manufacturer = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _manufacturer, value);
         }
 
         /// <summary>
@@ -197,14 +170,7 @@ namespace eLibNet4Onvif.Models
         public string Model
         {
             get => _model;
-            set
-            {
-                if (_model?.Equals(value) ?? value == null)
-                    return;
-                OnPropertyChanging();
-                _model = value;
-                OnPropertyChanged();
-            }
+            set => SetProperty(ref _model, value);
         }
 
         /// <summary>
@@ -267,6 +233,31 @@ namespace eLibNet4Onvif.Models
         }
 
         /// <summary>
+        ///     Пытается получить список URI стримов от ONVIF устройства.
+        /// </summary>
+        /// <param name="connectionUriIndex">Индекс элемента из списка адресов подключения.</param>
+        /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp:// username:password@address").</param>
+        /// <param name="cancellationToken">Токен отмены.</param>
+        /// <returns>Возвращает <c>true</c> если удалось получить список URI стримов от ONVIF устройства, даже если он пуст; иначе <c>false</c>.</returns>
+        public async Task<bool> TryReceivingStreamUrisAsync(int connectionUriIndex, bool addCredentialData, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!ConnectionUris.IsValidIndex(connectionUriIndex))
+                    return false;
+                OnPropertyChanging(nameof(StreamUris));
+                StreamUris.Clear();
+                await OnvifHelper.GetAllStreamUrisAsync(SessionFactory.CreateSession(ConnectionUris[connectionUriIndex]), addCredentialData, cancellationToken)
+                    .ForEachAsync(kvp => StreamUris.Add(kvp.Key, kvp.Value), cancellationToken).ConfigureAwait(false);
+                OnPropertyChanged(nameof(StreamUris));
+                return true;
+            } catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         ///     Определяет, равен ли текущий объект другому объекту того же типа.
         /// </summary>
         /// <param name="other">Объект для сравнения.</param>
@@ -274,11 +265,11 @@ namespace eLibNet4Onvif.Models
         [SuppressMessage("ReSharper", "UsageOfDefaultStructEquality")]
         public bool Equals(IDiscoveredCamera other) =>
             other != null &&
-            IpAddress.Equals(other.IpAddress) &&
+            (IpAddress?.Equals(other.IpAddress) ?? other.IpAddress == null) &&
             (MacAddress?.Equals(other.MacAddress) ?? other.MacAddress == null) &&
             (Title?.Equals(other.Title) ?? other.Title == null) &&
-            (Username?.Equals(other.Username) ?? other.Username == null) &&
-            (Password?.Equals(other.Password) ?? other.Password == null) &&
+            Username.Equals(other.Username) &&
+            Password.Equals(other.Password) &&
             (Manufacturer?.Equals(other.Manufacturer) ?? other.Manufacturer is null) &&
             (Model?.Equals(other.Model) ?? other.Model is null) &&
             Scopes.SequenceEqual(other.Scopes) &&
@@ -301,9 +292,27 @@ namespace eLibNet4Onvif.Models
         ///     Возвращает хэш-код для текущего объекта.
         /// </summary>
         /// <returns>Хэш-код для текущего объекта.</returns>
-        public override int GetHashCode() => HashCodeHelper.Combine(nameof(IDiscoveredCamera), IpAddress, Scopes, ConnectionUris, StreamUris);
+        public override int GetHashCode() => HashCodeHelper.Combine(nameof(IDiscoveredCamera), Credential, SessionFactory, Scopes, ConnectionUris, StreamUris);
 
-        private void OnPropertyChanging([CallerMemberName] string propertyName = null) => PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        private void OnPropertyChanging([CanBeNull] [CallerMemberName] string propertyName = null) => PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+        private void OnPropertyChanged([CanBeNull] [CallerMemberName] string propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        private void SetProperty<T>(ref T field, T newValue, [CanBeNull] [CallerMemberName] string propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, newValue))
+                return;
+            OnPropertyChanging(propertyName);
+            field = newValue;
+            OnPropertyChanged(propertyName);
+        }
+
+        private void SetProperty<TModel, T>(T oldValue, T newValue, [NotNull] TModel model, [NotNull] Action<TModel, T> callback, [CanBeNull] [CallerMemberName] string propertyName = null) where TModel : class
+        {
+            if (EqualityComparer<T>.Default.Equals(oldValue, newValue))
+                return;
+            OnPropertyChanging(propertyName);
+            callback(model, newValue);
+            OnPropertyChanged(propertyName);
+        }
     }
 }

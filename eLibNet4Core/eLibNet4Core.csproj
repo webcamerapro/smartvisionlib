@@ -63,7 +63,7 @@
         <Compile Include="Extensions\JTokenExtensions.cs"/>
         <Compile Include="Extensions\ObjectExtensions.cs"/>
         <Compile Include="Extensions\StringExtensions.cs"/>
-        <Compile Include="Extensions\UriExtensions.cs" />
+        <Compile Include="Extensions\UriExtensions.cs"/>
         <Compile Include="Helpers\ArpHelper.cs"/>
         <Compile Include="Helpers\AsyncHelper.cs"/>
         <Compile Include="Helpers\CryptographyHelper.cs"/>

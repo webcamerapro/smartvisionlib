@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Net;
 using eLibNet8Core.Models;
+using odm.core;
 
 namespace eLibNet8Onvif.Interfaces;
 
@@ -13,12 +14,22 @@ public interface IDiscoveredCamera : IEquatable<IDiscoveredCamera>, INotifyPrope
     /// <summary>
     ///     IP-адрес.
     /// </summary>
-    public IPAddress IpAddress { get; }
+    public IPAddress? IpAddress { get; set; }
 
     /// <summary>
     ///     MAC-адрес.
     /// </summary>
     public MACAddress? MacAddress { get; set; }
+
+    /// <summary>
+    ///     Предоставляет учетные данные для схем проверки подлинности на основе пароля.
+    /// </summary>
+    public NetworkCredential Credential { get; }
+
+    /// <summary>
+    ///     Менеджер сессий.
+    /// </summary>
+    public NvtSessionFactory SessionFactory { get; }
 
     /// <summary>
     ///     Наименование.
@@ -28,12 +39,12 @@ public interface IDiscoveredCamera : IEquatable<IDiscoveredCamera>, INotifyPrope
     /// <summary>
     ///     Имя пользователя.
     /// </summary>
-    public string? Username { get; set; }
+    public string Username { get; set; }
 
     /// <summary>
     ///     Пароль.
     /// </summary>
-    public string? Password { get; set; }
+    public string Password { get; set; }
 
     /// <summary>
     ///     Производитель.
@@ -77,4 +88,13 @@ public interface IDiscoveredCamera : IEquatable<IDiscoveredCamera>, INotifyPrope
     /// </summary>
     /// <param name="streamUris">Список <see cref="KeyValuePair{TKey,TValue}" /> из токена профиля и URI потока.</param>
     public void ImportStreamUris(IEnumerable<KeyValuePair<string, Uri>> streamUris);
+
+    /// <summary>
+    ///     Пытается получить список URI стримов от ONVIF устройства.
+    /// </summary>
+    /// <param name="connectionUriIndex">Индекс элемента из списка адресов подключения.</param>
+    /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp:// username:password@address").</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    /// <returns>Возвращает <c>true</c> если удалось получить список URI стримов от ONVIF устройства, даже если он пуст; иначе <c>false</c>.</returns>
+    public Task<bool> TryReceivingStreamUrisAsync(int connectionUriIndex, bool addCredentialData, CancellationToken cancellationToken = default);
 }

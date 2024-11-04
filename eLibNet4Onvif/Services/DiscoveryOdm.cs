@@ -7,10 +7,10 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using eLibNet4Core.Extensions;
+using eLibNet4Onvif.Exceptions;
 using eLibNet4Onvif.Extensions;
 using eLibNet4Onvif.Interfaces;
 using eLibNet4Onvif.Models;
-using JetBrains.Annotations;
 using odm.core;
 using utils;
 
@@ -31,22 +31,14 @@ namespace eLibNet4Onvif.Services
         /// </summary>
         /// <param name="timeOut">Таймаут в секундах.</param>
         /// <param name="cancellationToken">Токен отмены.</param>
-        /// <returns>Асинхронный перечислитель найденных устройств.</returns>
-        /// <exception cref="Exception">Выбрасывается, если поиск уже запущен.</exception>
+        /// <returns>Асинхронный перечислитель <see cref="IDiscoveredCamera" /> найденных устройств.</returns>
+        /// <exception cref="DiscoveryException">Выбрасывается, если поиск уже запущен.</exception>
         public IAsyncEnumerable<IDiscoveredCamera> StartAsync(int timeOut, CancellationToken cancellationToken = default)
         {
-            if (IsStarted)
-                throw new Exception("Поиск уже запущен.");
-            try
-            {
-                IsStarted = true;
-                var channel = Channel.CreateUnbounded<IDiscoveredCamera>();
-                _ = DiscoveryAsync(channel.Writer, timeOut, cancellationToken);
-                return channel.Reader.ReadAllAsync(cancellationToken);
-            } finally
-            {
-                IsStarted = false;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var channel = Channel.CreateUnbounded<IDiscoveredCamera>();
+            _ = DiscoveryAsync(channel.Writer, timeOut, cancellationToken).ConfigureAwait(false);
+            return channel.Reader.ReadAllAsync(cancellationToken);
         }
 
         /// <summary>
@@ -56,67 +48,59 @@ namespace eLibNet4Onvif.Services
         /// <param name="timeOut">Таймаут в секундах.</param>
         /// <param name="cancellationToken">Токен отмены.</param>
         /// <returns>Задача, представляющая асинхронную операцию.</returns>
-        /// <exception cref="Exception">Выбрасывается, если поиск уже запущен.</exception>
-        public async Task StartAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken = default)
-        {
-            if (IsStarted)
-                throw new Exception("Поиск уже запущен.");
-            try
-            {
-                IsStarted = true;
-                await DiscoveryAsync(channelWriter, timeOut, cancellationToken).ConfigureAwait(false);
-            } finally
-            {
-                IsStarted = false;
-            }
-        }
+        /// <exception cref="DiscoveryException">Выбрасывается, если поиск уже запущен.</exception>
+        public async Task StartAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken = default) => await DiscoveryAsync(channelWriter, timeOut, cancellationToken).ConfigureAwait(false);
 
-        private static async Task DiscoveryAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken)
+        private async Task DiscoveryAsync(ChannelWriter<IDiscoveredCamera> channelWriter, int timeOut, CancellationToken cancellationToken) => await Task.Run(() =>
         {
-            await Task.Run(() =>
+            var ctsTimeOut = new CancellationTokenSource(TimeSpan.FromSeconds(timeOut));
+            var ctsLinked  = CancellationTokenSource.CreateLinkedTokenSource(ctsTimeOut.Token, cancellationToken);
+            if (IsStarted)
+                throw new DiscoveryException("Поиск уже запущен.");
+            cancellationToken.ThrowIfCancellationRequested();
+            IsStarted = true;
+            INvtManager nvtManager = new NvtManager();
+            nvtManager.Observe().TakeUntil(ctsLinked.Token).OnCompleted(() =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                using (var ctsTimeOut = new CancellationTokenSource(TimeSpan.FromSeconds(timeOut)))
+                channelWriter.TryComplete();
+                IsStarted = false;
+                ctsLinked.Dispose();
+                ctsTimeOut.Dispose();
+            }).OnError(e =>
+            {
+                switch (e)
                 {
-                    using (var ctsLinked = CancellationTokenSource.CreateLinkedTokenSource(ctsTimeOut.Token, cancellationToken))
-                    {
-                        INvtManager nvtManager = new NvtManager();
-                        nvtManager.Observe().TakeUntil(ctsLinked.Token).OnCompleted(() =>
-                        {
-                            channelWriter.TryComplete();
-                        }).OnError(exception =>
-                        {
-                            if (exception is OperationCanceledException)
-                                channelWriter.TryComplete();
-                            else
-                                channelWriter.TryComplete(exception);
-                        }).Subscribe(nvtNode =>
-                        {
-                            if (TryCreateDiscoveredCamera(nvtNode, out var discoveredCamera))
-                                channelWriter.TryWrite(discoveredCamera);
-                        });
-                        nvtManager.Discover(TimeSpan.FromSeconds(timeOut));
-                    }
+                    case OperationCanceledException _ when ctsTimeOut.IsCancellationRequested:
+                        e = new TimeoutException("Время выполнения операции истекло.");
+                        channelWriter.TryComplete(e);
+                        break;
+                    case OperationCanceledException _:
+                        channelWriter.TryComplete();
+                        break;
+                    default:
+                        channelWriter.TryComplete(e);
+                        break;
                 }
-            }, cancellationToken).ConfigureAwait(false);
-        }
-        
-        private static bool TryCreateDiscoveredCamera(INvtNode nvtNode, [CanBeNull] out IDiscoveredCamera discoveredCamera)
-        {
-            discoveredCamera = null;
-            var nvtIdentity = nvtNode.identity;
-            if (nvtIdentity.uris.Length == 0)
-                return false;
-            var ipAddress = nvtIdentity.uris.Select(uri => Dns.GetHostAddresses(uri.Host)[0]).FirstOrDefault(uriIpAddress => uriIpAddress.AddressFamily == AddressFamily.InterNetwork);
-            if (ipAddress is null)
-                return false;
-            discoveredCamera = new DiscoveredCamera(ipAddress,
-                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("manufacturer/") || scope.AbsolutePath.Contains("mfr/") ||
-                                                           scope.AbsolutePath.Contains("name/"))?.GetRightAfterSegmentsPriority("manufacturer/", "mfr/", "name/") ?? "Unknown",
-                nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("hardware/"))?.GetRightAfterSegment("hardware/") ?? "Unknown",
-                nvtIdentity.scopes,
-                nvtIdentity.uris);
-            return true;
-        }
+
+                IsStarted = false;
+                ctsLinked.Dispose();
+                ctsTimeOut.Dispose();
+            }).Subscribe(nvtNode =>
+            {
+                var nvtIdentity = nvtNode.identity;
+                if (nvtIdentity.uris.Length == 0)
+                    return;
+                var ipAddress = nvtIdentity.uris.Select(uri => Dns.GetHostAddresses(uri.Host)[0]).FirstOrDefault(uriIpAddress => uriIpAddress.AddressFamily == AddressFamily.InterNetwork);
+                if (ipAddress is null)
+                    return;
+                channelWriter.TryWrite(new DiscoveredCamera(ipAddress,
+                    nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("manufacturer/") || scope.AbsolutePath.Contains("mfr/") ||
+                                                               scope.AbsolutePath.Contains("name/"))?.GetRightAfterSegmentsPriority("manufacturer/", "mfr/", "name/") ?? "Unknown",
+                    nvtIdentity.scopes.FirstOrDefault(scope => scope.AbsolutePath.Contains("hardware/"))?.GetRightAfterSegment("hardware/") ?? "Unknown",
+                    nvtIdentity.scopes,
+                    nvtIdentity.uris));
+            });
+            nvtManager.Discover(TimeSpan.FromSeconds(timeOut));
+        }, cancellationToken).ConfigureAwait(false);
     }
 }
