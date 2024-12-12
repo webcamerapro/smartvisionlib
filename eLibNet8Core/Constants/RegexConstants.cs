@@ -41,4 +41,18 @@ public static partial class RegexConstants
     /// <returns>Экземпляр регулярного выражения, соответствующего протоколу и порту.</returns>
     [GeneratedRegex(@"^(?<proto>\w+)://[^/]+?(?<port>:\d+)?/", RegexOptions.IgnoreCase, "ru-RU")]
     public static partial Regex ProtocolPortRegex();
+    
+    /// <summary>
+    ///     Имя пользователя и пароль из RTSP ссылки.
+    /// </summary>
+    /// <returns>Имя пользователя и пароль.</returns>
+    [GeneratedRegex("rtsp://(?<username>[^:]+):(?<password>[^@]+)@", RegexOptions.IgnoreCase, "ru-RU")]
+    public static partial Regex UsernamePasswordFromRtspRegex();
+    
+    /// <summary>
+    ///     Имя пользователя и пароль из RTSP ссылки. Альтернативный вариант.
+    /// </summary>
+    /// <returns>Имя пользователя и пароль.</returns>
+    [GeneratedRegex("user=(?<username>[^_]+)_password=(?<password>[^_]+)", RegexOptions.IgnoreCase, "ru-RU")]
+    public static partial Regex UsernamePasswordFromRtspAltRegex();
 }

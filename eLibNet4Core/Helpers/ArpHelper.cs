@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using eLibNet4Core.Constants;
 using eLibNet4Core.Interfaces;
 using eLibNet4Core.Models;
@@ -60,6 +62,26 @@ namespace eLibNet4Core.Helpers
                 process.Start();
                 foreach (Match match in RegexConstants.IpMacPairRegex.Matches(process.StandardOutput.ReadToEnd()))
                     yield return new IpMacPair(IPAddress.Parse(match.Groups["ip"].Value), MACAddress.Parse(match.Groups["mac"].Value));
+            }
+        }
+
+        /// <summary>
+        ///     Асинхронно возвращает перечисление ARP.
+        /// </summary>
+        /// <returns>Перечисление ARP.</returns>
+        public static async Task<IEnumerable<IIpMacPair>> GetArpEnumerableAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName               = "arp";
+                process.StartInfo.Arguments              = "-a";
+                process.StartInfo.UseShellExecute        = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.CreateNoWindow         = true;
+                process.Start();
+                return from Match match in RegexConstants.IpMacPairRegex.Matches(await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false))
+                    select new IpMacPair(IPAddress.Parse(match.Groups["ip"].Value), MACAddress.Parse(match.Groups["mac"].Value));
             }
         }
     }

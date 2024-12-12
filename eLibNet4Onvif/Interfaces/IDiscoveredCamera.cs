@@ -99,7 +99,7 @@ namespace eLibNet4Onvif.Interfaces
         /// <param name="connectionUriIndex">Индекс элемента из списка адресов подключения.</param>
         /// <param name="addCredentialData">Определяет добавлять ли имя пользователя и пароль перед адресом ("rtsp:// username:password@address").</param>
         /// <param name="cancellationToken">Токен отмены.</param>
-        /// <returns>Возвращает <c>true</c> если удалось получить список URI стримов от ONVIF устройства, даже если он пуст; иначе <c>false</c>.</returns>
+        /// <returns>Возвращает <c>true</c> если удалось получить список URI стримов от ONVIF устройства; иначе <c>false</c>.</returns>
         Task<bool> TryReceivingStreamUrisAsync(int connectionUriIndex, bool addCredentialData, CancellationToken cancellationToken = default);
     }
 }
